@@ -1,0 +1,32 @@
+[00:00:01.283] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.365] Server  LOG     ✓ Ready in 1124ms
+[00:00:10.265] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:16.436] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:00:16.436] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:00:16.436] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:00:16.436] Browser WARN    The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[00:00:27.536] Browser ERROR   Error fetching report data: {"code":"ERR_BAD_RESPONSE","config":{"adapter":["xhr","http","fetch"],"allowAbsoluteUrls":true,"baseURL":"http://localhost:8000","env":{},"headers":{"Accept":"application/json","Authorization":"Bearer 21|ze16mJiz2ASOX8uGBJ2r3rg4CnsvOMkIaHPBq4dG74b2e630","Content-Type":"application/json"},"maxBodyLength":-1,"maxContentLength":-1,"method":"get","timeout":0,"transformRequest":[null],"transformResponse":[null],"transitional":{"clarifyTimeoutError":false,"forcedJSONParsing":true,"silentJSONParsing":true},"url":"/api/reports/revenue?start_date=2026-02-01&end_date=2026-02-28","withCredentials":true,"xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN"},"message":"Request failed with status code 500","name":"AxiosError","stack":"AxiosError: Request failed with status code 500\n    at settle (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:6231:16)\n    at XMLHttpRequest.onloadend (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:6746:174)\n    at Axios.request (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:7550:49)\n    at async Object.getRevenueReport (http://localhost:3000/_next/static/chunks/src_40cf5db4._.js:669:26)\n    at async Promise.all (index 2)\n    at async ReportsPage.useCallback[fetchAll] (http://localhost:3000/_next/static/chunks/src_40cf5db4._.js:1098:100)","status":500}
+[00:00:27.700] Browser ERROR   Error fetching report data: {"code":"ERR_BAD_RESPONSE","config":{"adapter":["xhr","http","fetch"],"allowAbsoluteUrls":true,"baseURL":"http://localhost:8000","env":{},"headers":{"Accept":"application/json","Authorization":"Bearer 21|ze16mJiz2ASOX8uGBJ2r3rg4CnsvOMkIaHPBq4dG74b2e630","Content-Type":"application/json"},"maxBodyLength":-1,"maxContentLength":-1,"method":"get","timeout":0,"transformRequest":[null],"transformResponse":[null],"transitional":{"clarifyTimeoutError":false,"forcedJSONParsing":true,"silentJSONParsing":true},"url":"/api/reports/revenue?start_date=2026-02-01&end_date=2026-02-28","withCredentials":true,"xsrfCookieName":"XSRF-TOKEN","xsrfHeaderName":"X-XSRF-TOKEN"},"message":"Request failed with status code 500","name":"AxiosError","stack":"AxiosError: Request failed with status code 500\n    at settle (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:6231:16)\n    at XMLHttpRequest.onloadend (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:6746:174)\n    at Axios.request (http://localhost:3000/_next/static/chunks/node_modules_f761efda._.js:7550:49)\n    at async Object.getRevenueReport (http://localhost:3000/_next/static/chunks/src_40cf5db4._.js:669:26)\n    at async Promise.all (index 2)\n    at async ReportsPage.useCallback[fetchAll] (http://localhost:3000/_next/static/chunks/src_40cf5db4._.js:1098:100)","status":500}
+[00:20:03.163] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:26:22.082] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:31:36.161] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:31:38.650] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:31:39.962] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:31:40.960] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:31:44.771] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:33:05.000] Server  LOG     ✓ Compiled in 43ms
+[00:34:01.291] Server  LOG     ✓ Compiled in 219ms
+[00:34:02.528] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:39:23.209] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
