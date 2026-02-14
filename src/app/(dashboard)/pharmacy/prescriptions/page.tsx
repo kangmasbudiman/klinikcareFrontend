@@ -49,10 +49,13 @@ export default function PharmacyPrescriptionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<PrescriptionStatus | "all">("pending");
+  const [activeTab, setActiveTab] = useState<PrescriptionStatus | "all">(
+    "pending",
+  );
 
   // Detail Modal
-  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
+  const [selectedPrescription, setSelectedPrescription] =
+    useState<Prescription | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -131,31 +134,59 @@ export default function PharmacyPrescriptionsPage() {
   // Filter prescriptions by search
   const filteredPrescriptions = prescriptions.filter(
     (p) =>
-      p.prescription_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.medical_record?.patient?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.medical_record?.patient?.medical_record_number?.toLowerCase().includes(searchQuery.toLowerCase())
+      p.prescription_number
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      p.medical_record?.patient?.name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      p.medical_record?.patient?.medical_record_number
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()),
   );
 
   // Get status badge
   const getStatusBadge = (status: PrescriptionStatus) => {
     switch (status) {
       case "pending":
-        return <Badge variant="warning" className="gap-1"><Clock className="h-3 w-3" /> Menunggu</Badge>;
+        return (
+          <Badge variant="warning" className="gap-1">
+            <Clock className="h-3 w-3" /> Menunggu
+          </Badge>
+        );
       case "processed":
-        return <Badge variant="info" className="gap-1"><PlayCircle className="h-3 w-3" /> Diproses</Badge>;
+        return (
+          <Badge variant="info" className="gap-1">
+            <PlayCircle className="h-3 w-3" /> Diproses
+          </Badge>
+        );
       case "completed":
-        return <Badge variant="success" className="gap-1"><CheckCircle className="h-3 w-3" /> Selesai</Badge>;
+        return (
+          <Badge variant="success" className="gap-1">
+            <CheckCircle className="h-3 w-3" /> Selesai
+          </Badge>
+        );
       case "cancelled":
-        return <Badge variant="error" className="gap-1"><XCircle className="h-3 w-3" /> Dibatalkan</Badge>;
+        return (
+          <Badge variant="error" className="gap-1">
+            <XCircle className="h-3 w-3" /> Dibatalkan
+          </Badge>
+        );
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
   // Stats counts
-  const pendingCount = prescriptions.filter(p => p.status === "pending").length;
-  const processedCount = prescriptions.filter(p => p.status === "processed").length;
-  const completedCount = prescriptions.filter(p => p.status === "completed").length;
+  const pendingCount = prescriptions.filter(
+    (p) => p.status === "pending",
+  ).length;
+  const processedCount = prescriptions.filter(
+    (p) => p.status === "processed",
+  ).length;
+  const completedCount = prescriptions.filter(
+    (p) => p.status === "completed",
+  ).length;
 
   // Stats cards
   const statsCards = [
@@ -201,7 +232,9 @@ export default function PharmacyPrescriptionsPage() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dispensing Resep</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Dispensing Resep
+          </h1>
           <p className="text-muted-foreground">
             Kelola dan proses resep obat dari dokter
           </p>
@@ -276,7 +309,12 @@ export default function PharmacyPrescriptionsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PrescriptionStatus | "all")}>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) =>
+                setActiveTab(v as PrescriptionStatus | "all")
+              }
+            >
               <TabsList>
                 <TabsTrigger value="pending" className="gap-2">
                   <Clock className="h-4 w-4" />
@@ -301,7 +339,14 @@ export default function PharmacyPrescriptionsPage() {
                 ) : filteredPrescriptions.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Pill className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Tidak ada resep {activeTab === "pending" ? "menunggu" : activeTab === "processed" ? "diproses" : "selesai"}</p>
+                    <p>
+                      Tidak ada resep{" "}
+                      {activeTab === "pending"
+                        ? "menunggu"
+                        : activeTab === "processed"
+                          ? "diproses"
+                          : "selesai"}
+                    </p>
                   </div>
                 ) : (
                   <Table>
@@ -325,10 +370,12 @@ export default function PharmacyPrescriptionsPage() {
                           <TableCell>
                             <div>
                               <p className="font-medium">
-                                {prescription.medical_record?.patient?.name || "-"}
+                                {prescription.medical_record?.patient?.name ||
+                                  "-"}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                {prescription.medical_record?.patient?.medical_record_number || "-"}
+                                {prescription.medical_record?.patient
+                                  ?.medical_record_number || "-"}
                               </p>
                             </div>
                           </TableCell>
@@ -340,9 +387,13 @@ export default function PharmacyPrescriptionsPage() {
                               {prescription.items?.length || 0} obat
                             </Badge>
                           </TableCell>
-                          <TableCell>{getStatusBadge(prescription.status)}</TableCell>
+                          <TableCell>
+                            {getStatusBadge(prescription.status)}
+                          </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(prescription.created_at).toLocaleTimeString("id-ID", {
+                            {new Date(
+                              prescription.created_at,
+                            ).toLocaleTimeString("id-ID", {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -360,7 +411,12 @@ export default function PharmacyPrescriptionsPage() {
                               {prescription.status === "pending" && (
                                 <Button
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(prescription.id, "processed")}
+                                  onClick={() =>
+                                    handleUpdateStatus(
+                                      prescription.id,
+                                      "processed",
+                                    )
+                                  }
                                 >
                                   <PlayCircle className="h-4 w-4 mr-1" />
                                   Proses
@@ -369,8 +425,13 @@ export default function PharmacyPrescriptionsPage() {
                               {prescription.status === "processed" && (
                                 <Button
                                   size="sm"
-                                  variant="success"
-                                  onClick={() => handleUpdateStatus(prescription.id, "completed")}
+                                  className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                                  onClick={() =>
+                                    handleUpdateStatus(
+                                      prescription.id,
+                                      "completed",
+                                    )
+                                  }
                                 >
                                   <CheckCircle2 className="h-4 w-4 mr-1" />
                                   Selesai
@@ -415,7 +476,10 @@ export default function PharmacyPrescriptionsPage() {
                     {selectedPrescription.medical_record?.patient?.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {selectedPrescription.medical_record?.patient?.medical_record_number}
+                    {
+                      selectedPrescription.medical_record?.patient
+                        ?.medical_record_number
+                    }
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted">
@@ -424,7 +488,9 @@ export default function PharmacyPrescriptionsPage() {
                     Tanggal & Dokter
                   </div>
                   <p className="font-semibold">
-                    {new Date(selectedPrescription.created_at).toLocaleDateString("id-ID", {
+                    {new Date(
+                      selectedPrescription.created_at,
+                    ).toLocaleDateString("id-ID", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
@@ -452,10 +518,7 @@ export default function PharmacyPrescriptionsPage() {
                 </h4>
                 <div className="space-y-3">
                   {selectedPrescription.items?.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="p-3 border rounded-lg"
-                    >
+                    <div key={item.id} className="p-3 border rounded-lg">
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-medium">{item.medicine_name}</p>
@@ -522,7 +585,9 @@ export default function PharmacyPrescriptionsPage() {
 
             {selectedPrescription?.status === "pending" && (
               <Button
-                onClick={() => handleUpdateStatus(selectedPrescription.id, "processed")}
+                onClick={() =>
+                  handleUpdateStatus(selectedPrescription.id, "processed")
+                }
                 disabled={isProcessing}
               >
                 <PlayCircle className="h-4 w-4 mr-2" />
@@ -532,8 +597,10 @@ export default function PharmacyPrescriptionsPage() {
 
             {selectedPrescription?.status === "processed" && (
               <Button
-                variant="success"
-                onClick={() => handleUpdateStatus(selectedPrescription.id, "completed")}
+                className="bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                onClick={() =>
+                  handleUpdateStatus(selectedPrescription.id, "completed")
+                }
                 disabled={isProcessing}
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />

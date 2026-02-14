@@ -39,7 +39,7 @@ class BrowserNotification {
     try {
       localStorage.setItem(
         "browser_notification_settings",
-        JSON.stringify({ enabled: this.enabled })
+        JSON.stringify({ enabled: this.enabled }),
       );
     } catch (error) {
       console.error("Error saving notification settings:", error);
@@ -88,14 +88,16 @@ class BrowserNotification {
     return this.enabled;
   }
 
-  async show(options: BrowserNotificationOptions): Promise<Notification | null> {
+  async show(
+    options: BrowserNotificationOptions,
+  ): Promise<Notification | null> {
     if (!this.enabled) return null;
     if (!this.isSupported()) return null;
 
     // Request permission if not granted
     if (this.permission !== "granted") {
-      await this.requestPermission();
-      if (this.permission !== "granted") return null;
+      const result = await this.requestPermission();
+      if (result !== "granted") return null;
     }
 
     try {
@@ -139,11 +141,23 @@ class BrowserNotification {
   }
 
   async warning(title: string, body: string, onClick?: () => void) {
-    return this.show({ title, body, onClick, tag: "warning", requireInteraction: true });
+    return this.show({
+      title,
+      body,
+      onClick,
+      tag: "warning",
+      requireInteraction: true,
+    });
   }
 
   async error(title: string, body: string, onClick?: () => void) {
-    return this.show({ title, body, onClick, tag: "error", requireInteraction: true });
+    return this.show({
+      title,
+      body,
+      onClick,
+      tag: "error",
+      requireInteraction: true,
+    });
   }
 }
 

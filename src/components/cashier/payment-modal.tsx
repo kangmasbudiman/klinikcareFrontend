@@ -189,14 +189,14 @@ export function PaymentModal({
               ) : (
                 <>
                   {/* Services */}
-                  {displayInvoice.items?.filter(
+                  {(displayInvoice.items ?? []).filter(
                     (item) => item.item_type === "service",
                   ).length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs font-semibold text-muted-foreground uppercase">
                         Layanan
                       </p>
-                      {displayInvoice.items
+                      {(displayInvoice.items ?? [])
                         .filter((item) => item.item_type === "service")
                         .map((item, index) => (
                           <div
@@ -213,7 +213,7 @@ export function PaymentModal({
                   )}
 
                   {/* Medicines */}
-                  {displayInvoice.items?.filter(
+                  {(displayInvoice.items ?? []).filter(
                     (item) => item.item_type === "medicine",
                   ).length > 0 && (
                     <div className="space-y-1">
@@ -221,7 +221,7 @@ export function PaymentModal({
                         <Pill className="h-3 w-3" />
                         Obat
                       </p>
-                      {displayInvoice.items
+                      {(displayInvoice.items ?? [])
                         .filter((item) => item.item_type === "medicine")
                         .map((item, index) => (
                           <div
@@ -238,14 +238,14 @@ export function PaymentModal({
                   )}
 
                   {/* Other */}
-                  {displayInvoice.items?.filter(
+                  {(displayInvoice.items ?? []).filter(
                     (item) => item.item_type === "other",
                   ).length > 0 && (
                     <div className="space-y-1">
                       <p className="text-xs font-semibold text-muted-foreground uppercase">
                         Lainnya
                       </p>
-                      {displayInvoice.items
+                      {(displayInvoice.items ?? [])
                         .filter((item) => item.item_type === "other")
                         .map((item, index) => (
                           <div
