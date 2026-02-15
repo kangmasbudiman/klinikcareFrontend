@@ -34,6 +34,7 @@ import {
 import { ServiceInput, type ServiceItemData } from "./service-input";
 import { CpptForm } from "./cppt-form";
 import { AnamnesisTextareaField } from "./anamnesis-textarea-field";
+import { DiagnosisInput, type DiagnosisData } from "./diagnosis-input";
 import { PatientHistoryModal } from "./patient-history-modal";
 import type {
   MedicalRecord,
@@ -106,6 +107,9 @@ export function ExaminationForm({
   // Services/Tindakan
   const [services, setServices] = useState<ServiceItemData[]>([]);
 
+  // Diagnoses (ICD)
+  const [diagnoses, setDiagnoses] = useState<DiagnosisData[]>([]);
+
   // Load existing prescriptions
   useEffect(() => {
     if (medicalRecord.prescriptions && medicalRecord.prescriptions.length > 0) {
@@ -137,6 +141,20 @@ export function ExaminationForm({
     }
   }, [medicalRecord.services]);
 
+  // Load existing diagnoses
+  useEffect(() => {
+    if (medicalRecord.diagnoses && medicalRecord.diagnoses.length > 0) {
+      setDiagnoses(
+        medicalRecord.diagnoses.map((d) => ({
+          icd_code: d.icd_code || "",
+          icd_name: d.icd_name || "",
+          diagnosis_type: d.diagnosis_type,
+          notes: d.notes || "",
+        })),
+      );
+    }
+  }, [medicalRecord.diagnoses]);
+
   // Handle form field change
   const handleFieldChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -153,6 +171,14 @@ export function ExaminationForm({
     try {
       const payload: UpdateMedicalRecordPayload = {
         ...formData,
+        diagnoses: diagnoses
+          .filter((d) => d.icd_code || d.icd_name)
+          .map((d) => ({
+            icd_code: d.icd_code || null,
+            icd_name: d.icd_name || null,
+            diagnosis_type: d.diagnosis_type,
+            notes: d.notes || null,
+          })),
         services: services.map((s) => ({
           service_name: s.service_name,
           quantity: s.quantity,
@@ -487,36 +513,15 @@ export function ExaminationForm({
 
           {/* Diagnosis Tab */}
           <TabsContent value="diagnosis" className="space-y-4 mt-4">
+            <DiagnosisInput diagnoses={diagnoses} onChange={setDiagnoses} />
+
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Diagnosis & Tindakan</CardTitle>
+                <CardTitle className="text-lg">Tindakan / Treatment</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label>Diagnosis *</Label>
-                  <Textarea
-                    placeholder="Masukkan diagnosis..."
-                    value={formData.diagnosis || ""}
-                    onChange={(e) =>
-                      handleFieldChange("diagnosis", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label>Catatan Diagnosis</Label>
-                  <Textarea
-                    placeholder="Catatan tambahan untuk diagnosis..."
-                    value={formData.diagnosis_notes || ""}
-                    onChange={(e) =>
-                      handleFieldChange("diagnosis_notes", e.target.value)
-                    }
-                    rows={2}
-                  />
-                </div>
-                <Separator />
-                <div>
-                  <Label>Tindakan / Treatment</Label>
+                  <Label>Tindakan</Label>
                   <Textarea
                     placeholder="Tindakan yang dilakukan..."
                     value={formData.treatment || ""}
@@ -524,6 +529,17 @@ export function ExaminationForm({
                       handleFieldChange("treatment", e.target.value)
                     }
                     rows={3}
+                  />
+                </div>
+                <div>
+                  <Label>Catatan Tambahan</Label>
+                  <Textarea
+                    placeholder="Catatan tambahan..."
+                    value={formData.treatment_notes || ""}
+                    onChange={(e) =>
+                      handleFieldChange("treatment_notes", e.target.value)
+                    }
+                    rows={2}
                   />
                 </div>
               </CardContent>
