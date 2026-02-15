@@ -486,9 +486,10 @@ export default function DashboardPage() {
       changeType: "positive" as const,
       description: `${patientStats?.active.toLocaleString("id-ID") || 0} aktif`,
       icon: Users,
-      gradient: "from-blue-500 to-blue-600",
-      bgLight: "bg-blue-50 dark:bg-blue-950/50",
-      iconColor: "text-blue-600 dark:text-blue-400",
+      cardBg:
+        "bg-gradient-to-br from-blue-500 to-blue-700 dark:from-blue-600 dark:to-blue-900",
+      iconBg: "bg-white/20",
+      iconColor: "text-white",
     },
     {
       title: "Antrian Hari Ini",
@@ -497,9 +498,10 @@ export default function DashboardPage() {
       changeType: "neutral" as const,
       description: queueStats ? `${queueStats.completed} selesai` : "",
       icon: Clock,
-      gradient: "from-emerald-500 to-emerald-600",
-      bgLight: "bg-emerald-50 dark:bg-emerald-950/50",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
+      cardBg:
+        "bg-gradient-to-br from-emerald-500 to-teal-700 dark:from-emerald-600 dark:to-teal-900",
+      iconBg: "bg-white/20",
+      iconColor: "text-white",
     },
     {
       title: "Pemeriksaan",
@@ -508,9 +510,10 @@ export default function DashboardPage() {
       changeType: "neutral" as const,
       description: examStats ? `${examStats.completed} selesai` : "",
       icon: Stethoscope,
-      gradient: "from-violet-500 to-violet-600",
-      bgLight: "bg-violet-50 dark:bg-violet-950/50",
-      iconColor: "text-violet-600 dark:text-violet-400",
+      cardBg:
+        "bg-gradient-to-br from-violet-500 to-purple-700 dark:from-violet-600 dark:to-purple-900",
+      iconBg: "bg-white/20",
+      iconColor: "text-white",
     },
     {
       title: "Pendapatan Hari Ini",
@@ -524,9 +527,10 @@ export default function DashboardPage() {
         : "positive") as "positive" | "negative" | "neutral",
       description: invoiceStats ? `${invoiceStats.paid} transaksi` : "",
       icon: Banknote,
-      gradient: "from-amber-500 to-orange-600",
-      bgLight: "bg-amber-50 dark:bg-amber-950/50",
-      iconColor: "text-amber-600 dark:text-amber-400",
+      cardBg:
+        "bg-gradient-to-br from-amber-500 to-orange-700 dark:from-amber-600 dark:to-orange-900",
+      iconBg: "bg-white/20",
+      iconColor: "text-white",
     },
   ];
 
@@ -542,8 +546,9 @@ export default function DashboardPage() {
               ? ("positive" as const)
               : ("negative" as const),
           icon: UserCheck,
-          color: "text-blue-600 dark:text-blue-400",
-          bg: "bg-blue-50 dark:bg-blue-950/50",
+          iconColor: "text-blue-600 dark:text-blue-400",
+          iconBg: "bg-blue-100 dark:bg-blue-900/50",
+          borderColor: "border-l-blue-500",
         },
         {
           title: "Pendapatan Bulan Ini",
@@ -554,8 +559,9 @@ export default function DashboardPage() {
               ? ("positive" as const)
               : ("negative" as const),
           icon: CreditCard,
-          color: "text-emerald-600 dark:text-emerald-400",
-          bg: "bg-emerald-50 dark:bg-emerald-950/50",
+          iconColor: "text-emerald-600 dark:text-emerald-400",
+          iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
+          borderColor: "border-l-emerald-500",
         },
         {
           title: "Pasien Baru",
@@ -566,8 +572,9 @@ export default function DashboardPage() {
               ? ("positive" as const)
               : ("negative" as const),
           icon: Users,
-          color: "text-violet-600 dark:text-violet-400",
-          bg: "bg-violet-50 dark:bg-violet-950/50",
+          iconColor: "text-violet-600 dark:text-violet-400",
+          iconBg: "bg-violet-100 dark:bg-violet-900/50",
+          borderColor: "border-l-violet-500",
         },
         {
           title: "Rata-rata per Kunjungan",
@@ -575,8 +582,9 @@ export default function DashboardPage() {
           change: "",
           changeType: "neutral" as const,
           icon: BarChart3,
-          color: "text-amber-600 dark:text-amber-400",
-          bg: "bg-amber-50 dark:bg-amber-950/50",
+          iconColor: "text-amber-600 dark:text-amber-400",
+          iconBg: "bg-amber-100 dark:bg-amber-900/50",
+          borderColor: "border-l-amber-500",
         },
       ]
     : [];
@@ -691,47 +699,51 @@ export default function DashboardPage() {
       >
         {statsCards.map((stat) => (
           <motion.div key={stat.title} variants={itemVariants}>
-            <Card className="relative overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <Card
+              className={`relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 ${stat.cardBg} text-white`}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-white/80">
                   {stat.title}
                 </CardTitle>
-                <div className={`p-2.5 rounded-xl ${stat.bgLight}`}>
+                <div
+                  className={`p-2.5 rounded-xl ${stat.iconBg} backdrop-blur-sm`}
+                >
                   <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl md:text-3xl font-bold">
+                <div className="text-2xl md:text-3xl font-bold text-white">
                   {stat.value}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs mt-1">
                   {stat.changeType === "positive" && stat.change && (
-                    <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="flex items-center text-white font-medium bg-white/15 rounded-full px-2 py-0.5">
                       <TrendingUp className="h-3 w-3 mr-0.5" />
                       {stat.change}
                     </span>
                   )}
                   {stat.changeType === "negative" && stat.change && (
-                    <span className="flex items-center text-red-600 dark:text-red-400 font-medium">
+                    <span className="flex items-center text-white font-medium bg-white/15 rounded-full px-2 py-0.5">
                       <TrendingDown className="h-3 w-3 mr-0.5" />
                       {stat.change}
                     </span>
                   )}
                   {stat.changeType === "neutral" && stat.change && (
-                    <span className="text-muted-foreground font-medium">
+                    <span className="text-white/80 font-medium">
                       {stat.change}
                     </span>
                   )}
                   {stat.description && (
-                    <span className="text-muted-foreground">
+                    <span className="text-white/70">
                       &bull; {stat.description}
                     </span>
                   )}
                 </div>
               </CardContent>
-              <div
-                className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`}
-              />
+              {/* Decorative circles */}
+              <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-white/5" />
             </Card>
           </motion.div>
         ))}
@@ -747,7 +759,9 @@ export default function DashboardPage() {
         >
           {summaryCards.map((card) => (
             <motion.div key={card.title} variants={itemVariants}>
-              <Card className="hover:shadow-md transition-shadow">
+              <Card
+                className={`hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 border-l-4 ${card.borderColor}`}
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -758,12 +772,12 @@ export default function DashboardPage() {
                       {card.change && (
                         <div className="flex items-center gap-1 mt-1">
                           {card.changeType === "positive" ? (
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center bg-emerald-50 dark:bg-emerald-950/50 rounded-full px-2 py-0.5">
                               <TrendingUp className="h-3 w-3 mr-0.5" />
                               {card.change}
                             </span>
                           ) : card.changeType === "negative" ? (
-                            <span className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center">
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center bg-red-50 dark:bg-red-950/50 rounded-full px-2 py-0.5">
                               <TrendingDown className="h-3 w-3 mr-0.5" />
                               {card.change}
                             </span>
@@ -774,8 +788,8 @@ export default function DashboardPage() {
                         </div>
                       )}
                     </div>
-                    <div className={`p-3 rounded-xl ${card.bg}`}>
-                      <card.icon className={`h-6 w-6 ${card.color}`} />
+                    <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                      <card.icon className={`h-6 w-6 ${card.iconColor}`} />
                     </div>
                   </div>
                 </CardContent>

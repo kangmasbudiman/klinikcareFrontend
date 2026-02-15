@@ -33,6 +33,7 @@ import {
 } from "./prescription-form";
 import { ServiceInput, type ServiceItemData } from "./service-input";
 import { CpptForm } from "./cppt-form";
+import { AnamnesisTextareaField } from "./anamnesis-textarea-field";
 import { PatientHistoryModal } from "./patient-history-modal";
 import type {
   MedicalRecord,
@@ -59,6 +60,9 @@ export function ExaminationForm({
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("anamnesis");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [anamnesisRecordingField, setAnamnesisRecordingField] = useState<
+    string | null
+  >(null);
 
   // Form state
   const [formData, setFormData] = useState<UpdateMedicalRecordPayload>({
@@ -370,66 +374,81 @@ export function ExaminationForm({
                 <CardTitle className="text-lg">Anamnesis (Keluhan)</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Keluhan Utama *</Label>
-                  <Textarea
-                    placeholder="Masukkan keluhan utama pasien..."
-                    value={formData.chief_complaint || ""}
-                    onChange={(e) =>
-                      handleFieldChange("chief_complaint", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <Label>Riwayat Penyakit Sekarang</Label>
-                  <Textarea
-                    placeholder="Ceritakan perjalanan penyakit..."
-                    value={formData.present_illness || ""}
-                    onChange={(e) =>
-                      handleFieldChange("present_illness", e.target.value)
-                    }
-                    rows={3}
-                  />
-                </div>
+                <AnamnesisTextareaField
+                  label="Keluhan Utama"
+                  placeholder="Masukkan keluhan utama pasien..."
+                  value={formData.chief_complaint || ""}
+                  onChange={(val) => handleFieldChange("chief_complaint", val)}
+                  rows={3}
+                  required
+                  isRecordingActive={
+                    anamnesisRecordingField === "chief_complaint"
+                  }
+                  onRecordingStart={() =>
+                    setAnamnesisRecordingField("chief_complaint")
+                  }
+                  onRecordingStop={() => setAnamnesisRecordingField(null)}
+                />
+                <AnamnesisTextareaField
+                  label="Riwayat Penyakit Sekarang"
+                  placeholder="Ceritakan perjalanan penyakit..."
+                  value={formData.present_illness || ""}
+                  onChange={(val) => handleFieldChange("present_illness", val)}
+                  rows={3}
+                  isRecordingActive={
+                    anamnesisRecordingField === "present_illness"
+                  }
+                  onRecordingStart={() =>
+                    setAnamnesisRecordingField("present_illness")
+                  }
+                  onRecordingStop={() => setAnamnesisRecordingField(null)}
+                />
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>Riwayat Penyakit Dahulu</Label>
-                    <Textarea
-                      placeholder="Penyakit yang pernah diderita..."
-                      value={formData.past_medical_history || ""}
-                      onChange={(e) =>
-                        handleFieldChange(
-                          "past_medical_history",
-                          e.target.value,
-                        )
-                      }
-                      rows={2}
-                    />
-                  </div>
-                  <div>
-                    <Label>Riwayat Penyakit Keluarga</Label>
-                    <Textarea
-                      placeholder="Riwayat penyakit dalam keluarga..."
-                      value={formData.family_history || ""}
-                      onChange={(e) =>
-                        handleFieldChange("family_history", e.target.value)
-                      }
-                      rows={2}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Catatan Alergi</Label>
-                  <Textarea
-                    placeholder="Alergi obat, makanan, dll..."
-                    value={formData.allergy_notes || ""}
-                    onChange={(e) =>
-                      handleFieldChange("allergy_notes", e.target.value)
+                  <AnamnesisTextareaField
+                    label="Riwayat Penyakit Dahulu"
+                    placeholder="Penyakit yang pernah diderita..."
+                    value={formData.past_medical_history || ""}
+                    onChange={(val) =>
+                      handleFieldChange("past_medical_history", val)
                     }
                     rows={2}
+                    isRecordingActive={
+                      anamnesisRecordingField === "past_medical_history"
+                    }
+                    onRecordingStart={() =>
+                      setAnamnesisRecordingField("past_medical_history")
+                    }
+                    onRecordingStop={() => setAnamnesisRecordingField(null)}
+                  />
+                  <AnamnesisTextareaField
+                    label="Riwayat Penyakit Keluarga"
+                    placeholder="Riwayat penyakit dalam keluarga..."
+                    value={formData.family_history || ""}
+                    onChange={(val) => handleFieldChange("family_history", val)}
+                    rows={2}
+                    isRecordingActive={
+                      anamnesisRecordingField === "family_history"
+                    }
+                    onRecordingStart={() =>
+                      setAnamnesisRecordingField("family_history")
+                    }
+                    onRecordingStop={() => setAnamnesisRecordingField(null)}
                   />
                 </div>
+                <AnamnesisTextareaField
+                  label="Catatan Alergi"
+                  placeholder="Alergi obat, makanan, dll..."
+                  value={formData.allergy_notes || ""}
+                  onChange={(val) => handleFieldChange("allergy_notes", val)}
+                  rows={2}
+                  isRecordingActive={
+                    anamnesisRecordingField === "allergy_notes"
+                  }
+                  onRecordingStart={() =>
+                    setAnamnesisRecordingField("allergy_notes")
+                  }
+                  onRecordingStop={() => setAnamnesisRecordingField(null)}
+                />
               </CardContent>
             </Card>
           </TabsContent>
