@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -18,6 +19,12 @@ import {
   Info,
   AlertTriangle,
   CheckCircle,
+  Stethoscope,
+  Package,
+  AlertCircle,
+  Banknote,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -29,7 +36,11 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
+import Link from "next/link";
 
 import {
   Card,
@@ -44,41 +55,27 @@ import { useAuth } from "@/providers/auth-provider";
 import { ROLE_LABELS, type UserRole } from "@/types";
 import { getInitials } from "@/lib/utils";
 
-// Announcements data (dummy data)
-const announcements = [
-  {
-    id: 1,
-    type: "info" as const,
-    message:
-      "Rapat koordinasi bulanan akan dilaksanakan pada hari Jumat, 24 Januari 2025 pukul 14:00 WIB di Ruang Meeting Lt. 2",
-  },
-  {
-    id: 2,
-    type: "warning" as const,
-    message:
-      "Stok obat Paracetamol 500mg hampir habis. Mohon segera lakukan pemesanan ulang.",
-  },
-  {
-    id: 3,
-    type: "success" as const,
-    message:
-      "Selamat! Klinik kita telah berhasil meraih akreditasi paripurna. Terima kasih atas kerja keras seluruh tim.",
-  },
-  {
-    id: 4,
-    type: "info" as const,
-    message:
-      "Jadwal piket dokter untuk bulan Februari sudah tersedia. Silakan cek di menu Jadwal Dokter.",
-  },
-  {
-    id: 5,
-    type: "warning" as const,
-    message:
-      "Sistem akan mengalami maintenance pada Minggu, 26 Januari 2025 pukul 00:00 - 04:00 WIB.",
-  },
-];
+import reportService from "@/services/report.service";
+import patientService from "@/services/patient.service";
+import queueService from "@/services/queue.service";
+import medicalRecordService from "@/services/medical-record.service";
+import { medicineService } from "@/services/pharmacy.service";
 
-// Get icon and color based on announcement type
+import type {
+  ReportSummary,
+  VisitReportData,
+  DepartmentReportItem,
+  DoctorReportItem,
+} from "@/types/report";
+import type { PatientStats } from "@/types/patient";
+import type { QueueStats, Queue } from "@/types/queue";
+import type { MedicalRecordStats, InvoiceStats } from "@/types/medical-record";
+import type { MedicineStats, Medicine, MedicineBatch } from "@/types/pharmacy";
+
+// =====================
+// Helper Components
+// =====================
+
 const getAnnouncementStyle = (type: "info" | "warning" | "success") => {
   switch (type) {
     case "warning":
@@ -102,171 +99,50 @@ const getAnnouncementStyle = (type: "info" | "warning" | "success") => {
   }
 };
 
-// Stats cards data
-const statsCards = [
-  {
-    title: "Total Pasien",
-    value: "1,234",
-    change: "+12%",
-    changeType: "positive" as "positive" | "negative" | "neutral",
-    description: "dari bulan lalu",
-    icon: Users,
-    gradient: "from-blue-500 to-blue-600",
-    bgLight: "bg-blue-50 dark:bg-blue-950/50",
-    iconColor: "text-blue-600 dark:text-blue-400",
-  },
-  {
-    title: "Kunjungan Hari Ini",
-    value: "48",
-    change: "+8%",
-    changeType: "positive" as "positive" | "negative" | "neutral",
-    description: "dari kemarin",
-    icon: UserCheck,
-    gradient: "from-emerald-500 to-emerald-600",
-    bgLight: "bg-emerald-50 dark:bg-emerald-950/50",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    title: "Jadwal Dokter",
-    value: "12",
-    change: "Aktif",
-    changeType: "neutral" as "positive" | "negative" | "neutral",
-    description: "dokter bertugas",
-    icon: Calendar,
-    gradient: "from-violet-500 to-violet-600",
-    bgLight: "bg-violet-50 dark:bg-violet-950/50",
-    iconColor: "text-violet-600 dark:text-violet-400",
-  },
-  {
-    title: "Pendapatan",
-    value: "Rp 15.5M",
-    change: "+23%",
-    changeType: "positive" as "positive" | "negative" | "neutral",
-    description: "dari bulan lalu",
-    icon: CreditCard,
-    gradient: "from-amber-500 to-orange-600",
-    bgLight: "bg-amber-50 dark:bg-amber-950/50",
-    iconColor: "text-amber-600 dark:text-amber-400",
-  },
-];
+function formatCurrency(amount: number): string {
+  if (amount >= 1_000_000_000)
+    return `Rp ${(amount / 1_000_000_000).toFixed(1)}B`;
+  if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `Rp ${(amount / 1_000).toFixed(0)}K`;
+  return `Rp ${amount.toLocaleString("id-ID")}`;
+}
 
-// Recent activities
-const recentActivities = [
-  {
-    id: 1,
-    action: "Pasien baru terdaftar",
-    name: "John Doe",
-    time: "5 menit lalu",
-    icon: Users,
-    color: "bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400",
-  },
-  {
-    id: 2,
-    action: "Pembayaran diterima",
-    name: "Rp 500.000 - Jane Smith",
-    time: "15 menit lalu",
-    icon: CreditCard,
-    color:
-      "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400",
-  },
-  {
-    id: 3,
-    action: "Resep obat dibuat",
-    name: "Dr. Ahmad Sudirman",
-    time: "30 menit lalu",
-    icon: Pill,
-    color:
-      "bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400",
-  },
-  {
-    id: 4,
-    action: "Jadwal dokter diperbarui",
-    name: "Admin Klinik",
-    time: "1 jam lalu",
-    icon: Calendar,
-    color:
-      "bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400",
-  },
-];
+function formatFullCurrency(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
 
-// Queue data
-const queueData = [
-  {
-    id: 1,
-    name: "Ahmad Sudirman",
-    poli: "Umum",
-    number: "A-001",
-    status: "Menunggu",
-    time: "08:30",
-  },
-  {
-    id: 2,
-    name: "Siti Nurhaliza",
-    poli: "Gigi",
-    number: "B-003",
-    status: "Dipanggil",
-    time: "09:00",
-  },
-  {
-    id: 3,
-    name: "Budi Santoso",
-    poli: "Umum",
-    number: "A-002",
-    status: "Menunggu",
-    time: "09:15",
-  },
-  {
-    id: 4,
-    name: "Dewi Lestari",
-    poli: "Anak",
-    number: "C-001",
-    status: "Menunggu",
-    time: "09:30",
-  },
-  {
-    id: 5,
-    name: "Rudi Hartono",
-    poli: "Umum",
-    number: "A-003",
-    status: "Menunggu",
-    time: "09:45",
-  },
-];
+function formatPercent(value: number): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(1)}%`;
+}
 
-// Top doctors
-const topDoctors = [
-  { name: "Dr. Ahmad Sudirman", specialty: "Umum", patients: 45 },
-  { name: "Dr. Siti Rahayu", specialty: "Gigi", patients: 38 },
-  { name: "Dr. Budi Santoso", specialty: "Anak", patients: 32 },
-];
+function getTodayRange() {
+  const today = new Date().toISOString().split("T")[0];
+  return { start_date: today, end_date: today };
+}
 
-// Monthly visit data (dummy data)
-const monthlyVisitData = [
-  { month: "Jan", kunjungan: 856, pasienBaru: 124 },
-  { month: "Feb", kunjungan: 932, pasienBaru: 98 },
-  { month: "Mar", kunjungan: 1021, pasienBaru: 156 },
-  { month: "Apr", kunjungan: 878, pasienBaru: 112 },
-  { month: "Mei", kunjungan: 1156, pasienBaru: 189 },
-  { month: "Jun", kunjungan: 1089, pasienBaru: 134 },
-  { month: "Jul", kunjungan: 1234, pasienBaru: 201 },
-  { month: "Agu", kunjungan: 1145, pasienBaru: 167 },
-  { month: "Sep", kunjungan: 1312, pasienBaru: 223 },
-  { month: "Okt", kunjungan: 1198, pasienBaru: 178 },
-  { month: "Nov", kunjungan: 1367, pasienBaru: 245 },
-  { month: "Des", kunjungan: 1423, pasienBaru: 267 },
-];
+function getMonthRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+  const end = now.toISOString().split("T")[0];
+  return { start_date: start, end_date: end };
+}
 
-// Visit by poli data (dummy data)
-const visitByPoliData = [
-  { poli: "Umum", kunjungan: 456, fill: "var(--color-primary)" },
-  { poli: "Gigi", kunjungan: 234, fill: "oklch(0.65 0.2 145)" },
-  { poli: "Anak", kunjungan: 189, fill: "oklch(0.75 0.15 65)" },
-  { poli: "Mata", kunjungan: 145, fill: "oklch(0.6 0.2 280)" },
-  { poli: "THT", kunjungan: 98, fill: "oklch(0.6 0.15 30)" },
-];
+function getYearRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0];
+  const end = now.toISOString().split("T")[0];
+  return { start_date: start, end_date: end };
+}
 
-// Custom tooltip component
-const CustomTooltip = ({
+// Recharts tooltip components
+const VisitTooltip = ({
   active,
   payload,
   label,
@@ -281,8 +157,12 @@ const CustomTooltip = ({
         <p className="font-medium text-sm mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {entry.dataKey === "kunjungan" ? "Kunjungan" : "Pasien Baru"}:{" "}
-            {entry.value.toLocaleString("id-ID")}
+            {entry.dataKey === "total"
+              ? "Total Kunjungan"
+              : entry.dataKey === "new_patients"
+                ? "Pasien Baru"
+                : "Pasien Lama"}
+            : {entry.value.toLocaleString("id-ID")}
           </p>
         ))}
       </div>
@@ -291,8 +171,7 @@ const CustomTooltip = ({
   return null;
 };
 
-// Custom tooltip for bar chart
-const BarTooltip = ({
+const DeptTooltip = ({
   active,
   payload,
   label,
@@ -304,7 +183,7 @@ const BarTooltip = ({
   if (active && payload && payload.length) {
     return (
       <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
-        <p className="font-medium text-sm">Poli {label}</p>
+        <p className="font-medium text-sm">{label}</p>
         <p className="text-sm text-muted-foreground">
           Kunjungan: {payload[0].value.toLocaleString("id-ID")}
         </p>
@@ -314,14 +193,10 @@ const BarTooltip = ({
   return null;
 };
 
+// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
 };
 
 const itemVariants = {
@@ -329,8 +204,395 @@ const itemVariants = {
   show: { opacity: 1, y: 0 },
 };
 
+// Department colors for charts
+const DEPT_COLORS = [
+  "var(--color-primary)",
+  "oklch(0.65 0.2 145)",
+  "oklch(0.75 0.15 65)",
+  "oklch(0.6 0.2 280)",
+  "oklch(0.6 0.15 30)",
+  "oklch(0.55 0.2 200)",
+  "oklch(0.7 0.18 320)",
+  "oklch(0.6 0.15 100)",
+];
+
+const PIE_COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#8b5cf6",
+  "#f59e0b",
+  "#ef4444",
+  "#06b6d4",
+  "#ec4899",
+  "#84cc16",
+];
+
+// Queue status helpers
+const QUEUE_STATUS_BADGE: Record<string, string> = {
+  waiting:
+    "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400",
+  called: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400",
+  in_service:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400",
+  completed:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400",
+  skipped:
+    "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400",
+};
+
+const QUEUE_STATUS_LABEL: Record<string, string> = {
+  waiting: "Menunggu",
+  called: "Dipanggil",
+  in_service: "Dilayani",
+  completed: "Selesai",
+  skipped: "Dilewati",
+  cancelled: "Dibatalkan",
+};
+
+// =====================
+// Main Component
+// =====================
+
 export default function DashboardPage() {
   const { user } = useAuth();
+
+  // Data states
+  const [loading, setLoading] = useState(true);
+  const [patientStats, setPatientStats] = useState<PatientStats | null>(null);
+  const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
+  const [todayQueues, setTodayQueues] = useState<{
+    waiting: Queue[];
+    called: Queue[];
+    in_service: Queue[];
+  }>({ waiting: [], called: [], in_service: [] });
+  const [examStats, setExamStats] = useState<MedicalRecordStats | null>(null);
+  const [invoiceStats, setInvoiceStats] = useState<InvoiceStats | null>(null);
+  const [reportSummary, setReportSummary] = useState<ReportSummary | null>(
+    null,
+  );
+  const [visitData, setVisitData] = useState<VisitReportData | null>(null);
+  const [departmentData, setDepartmentData] = useState<DepartmentReportItem[]>(
+    [],
+  );
+  const [doctorData, setDoctorData] = useState<DoctorReportItem[]>([]);
+  const [medicineStats, setMedicineStats] = useState<MedicineStats | null>(
+    null,
+  );
+  const [lowStockMedicines, setLowStockMedicines] = useState<Medicine[]>([]);
+  const [expiringMedicines, setExpiringMedicines] = useState<MedicineBatch[]>(
+    [],
+  );
+
+  // Announcements built from real data
+  const [announcements, setAnnouncements] = useState<
+    { id: number; type: "info" | "warning" | "success"; message: string }[]
+  >([]);
+
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    const today = new Date().toISOString().split("T")[0];
+    const monthRange = getMonthRange();
+    const yearRange = getYearRange();
+
+    // Fetch all data in parallel with error handling per request
+    const results = await Promise.allSettled([
+      patientService.getPatientStats(), // 0
+      queueService.getQueueStats(today), // 1
+      queueService.getTodayQueues(), // 2
+      medicalRecordService.getExaminationStats(today), // 3
+      medicalRecordService.getInvoiceStats({ date: today }), // 4
+      reportService.getSummary(monthRange), // 5
+      reportService.getVisitReport({ ...yearRange, group_by: "monthly" }), // 6
+      reportService.getDepartmentReport(monthRange), // 7
+      reportService.getDoctorReport(monthRange), // 8
+      medicineService.getMedicineStats(), // 9
+      medicineService.getLowStockMedicines(), // 10
+      medicineService.getExpiringMedicines(3), // 11
+    ]);
+
+    // Extract data safely
+    if (results[0].status === "fulfilled")
+      setPatientStats(results[0].value.data);
+    if (results[1].status === "fulfilled") setQueueStats(results[1].value.data);
+    if (results[2].status === "fulfilled") {
+      const qData = results[2].value.data;
+      setTodayQueues({
+        waiting: qData.waiting || [],
+        called: qData.called || [],
+        in_service: qData.in_service || [],
+      });
+    }
+    if (results[3].status === "fulfilled") setExamStats(results[3].value.data);
+    if (results[4].status === "fulfilled")
+      setInvoiceStats(results[4].value.data);
+    if (results[5].status === "fulfilled")
+      setReportSummary(results[5].value.data);
+    if (results[6].status === "fulfilled") setVisitData(results[6].value.data);
+    if (results[7].status === "fulfilled")
+      setDepartmentData(results[7].value.data);
+    if (results[8].status === "fulfilled") setDoctorData(results[8].value.data);
+    if (results[9].status === "fulfilled")
+      setMedicineStats(results[9].value.data);
+    if (results[10].status === "fulfilled")
+      setLowStockMedicines(results[10].value.data);
+    if (results[11].status === "fulfilled")
+      setExpiringMedicines(results[11].value.data);
+
+    // Build dynamic announcements
+    const dynAnnouncements: {
+      id: number;
+      type: "info" | "warning" | "success";
+      message: string;
+    }[] = [];
+    let announcementId = 1;
+
+    if (results[9].status === "fulfilled") {
+      const ms = results[9].value.data;
+      if (ms.out_of_stock > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "warning",
+          message: `${ms.out_of_stock} obat dalam kondisi stok habis. Segera lakukan pemesanan ulang.`,
+        });
+      }
+      if (ms.low_stock > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "warning",
+          message: `${ms.low_stock} obat dalam kondisi stok menipis. Periksa dan lakukan pemesanan.`,
+        });
+      }
+      if (ms.expiring_soon > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "warning",
+          message: `${ms.expiring_soon} obat mendekati tanggal kedaluwarsa dalam 3 bulan ke depan.`,
+        });
+      }
+    }
+    if (results[1].status === "fulfilled") {
+      const qs = results[1].value.data;
+      if (qs.waiting > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "info",
+          message: `${qs.waiting} pasien sedang menunggu di antrian hari ini.`,
+        });
+      }
+    }
+    if (results[4].status === "fulfilled") {
+      const is = results[4].value.data;
+      if (is.unpaid > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "info",
+          message: `${is.unpaid} invoice belum dibayar dengan total ${formatFullCurrency(is.total_unpaid)}.`,
+        });
+      }
+    }
+    if (results[0].status === "fulfilled") {
+      const ps = results[0].value.data;
+      if (ps.this_month > 0) {
+        dynAnnouncements.push({
+          id: announcementId++,
+          type: "success",
+          message: `${ps.this_month} pasien baru terdaftar bulan ini. Total pasien aktif: ${ps.active.toLocaleString("id-ID")}.`,
+        });
+      }
+    }
+
+    if (dynAnnouncements.length === 0) {
+      dynAnnouncements.push({
+        id: 1,
+        type: "info",
+        message:
+          "Selamat datang di sistem manajemen klinik. Semua operasional berjalan normal.",
+      });
+    }
+
+    setAnnouncements(dynAnnouncements);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Prepare chart data
+  const visitChartData =
+    visitData?.by_date?.map((item) => ({
+      date: new Date(item.date).toLocaleDateString("id-ID", {
+        month: "short",
+        year: undefined,
+      }),
+      total: item.total,
+      new_patients: item.new_patients,
+      returning_patients: item.returning_patients,
+    })) || [];
+
+  const deptChartData = departmentData.map((d, i) => ({
+    name: d.department_name,
+    kunjungan: d.total_visits,
+    fill: DEPT_COLORS[i % DEPT_COLORS.length],
+  }));
+
+  const patientTypePieData = patientStats
+    ? [
+        { name: "Umum", value: patientStats.by_type.umum },
+        { name: "BPJS", value: patientStats.by_type.bpjs },
+        { name: "Asuransi", value: patientStats.by_type.asuransi },
+      ].filter((d) => d.value > 0)
+    : [];
+
+  const PAYMENT_METHOD_NAMES: Record<string, string> = {
+    cash: "Tunai",
+    card: "Kartu",
+    transfer: "Transfer",
+    bpjs: "BPJS",
+    insurance: "Asuransi",
+  };
+
+  const paymentMethodPieData =
+    invoiceStats?.payment_by_method
+      ?.map((m) => ({
+        name: PAYMENT_METHOD_NAMES[m.payment_method] || m.payment_method,
+        value: m.total,
+        count: m.count,
+      }))
+      .filter((d) => d.value > 0) || [];
+
+  // Active queue list (waiting + called + in_service, max 6)
+  const activeQueues = [
+    ...todayQueues.in_service,
+    ...todayQueues.called,
+    ...todayQueues.waiting,
+  ].slice(0, 6);
+
+  // Top doctors (sorted by patients, max 5)
+  const topDoctors = [...doctorData]
+    .sort((a, b) => b.total_patients - a.total_patients)
+    .slice(0, 5);
+
+  // Stats cards config
+  const statsCards = [
+    {
+      title: "Total Pasien",
+      value: patientStats ? patientStats.total.toLocaleString("id-ID") : "-",
+      change:
+        patientStats && patientStats.this_month > 0
+          ? `+${patientStats.this_month} bulan ini`
+          : "",
+      changeType: "positive" as const,
+      description: `${patientStats?.active.toLocaleString("id-ID") || 0} aktif`,
+      icon: Users,
+      gradient: "from-blue-500 to-blue-600",
+      bgLight: "bg-blue-50 dark:bg-blue-950/50",
+      iconColor: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      title: "Antrian Hari Ini",
+      value: queueStats ? queueStats.total.toLocaleString("id-ID") : "-",
+      change: queueStats ? `${queueStats.waiting} menunggu` : "",
+      changeType: "neutral" as const,
+      description: queueStats ? `${queueStats.completed} selesai` : "",
+      icon: Clock,
+      gradient: "from-emerald-500 to-emerald-600",
+      bgLight: "bg-emerald-50 dark:bg-emerald-950/50",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      title: "Pemeriksaan",
+      value: examStats ? examStats.total.toLocaleString("id-ID") : "-",
+      change: examStats ? `${examStats.in_progress} berlangsung` : "",
+      changeType: "neutral" as const,
+      description: examStats ? `${examStats.completed} selesai` : "",
+      icon: Stethoscope,
+      gradient: "from-violet-500 to-violet-600",
+      bgLight: "bg-violet-50 dark:bg-violet-950/50",
+      iconColor: "text-violet-600 dark:text-violet-400",
+    },
+    {
+      title: "Pendapatan Hari Ini",
+      value: invoiceStats ? formatCurrency(invoiceStats.total_revenue) : "-",
+      change:
+        invoiceStats && invoiceStats.unpaid > 0
+          ? `${invoiceStats.unpaid} belum bayar`
+          : "Lunas semua",
+      changeType: (invoiceStats && invoiceStats.unpaid > 0
+        ? "negative"
+        : "positive") as "positive" | "negative" | "neutral",
+      description: invoiceStats ? `${invoiceStats.paid} transaksi` : "",
+      icon: Banknote,
+      gradient: "from-amber-500 to-orange-600",
+      bgLight: "bg-amber-50 dark:bg-amber-950/50",
+      iconColor: "text-amber-600 dark:text-amber-400",
+    },
+  ];
+
+  // Summary cards (monthly overview)
+  const summaryCards = reportSummary
+    ? [
+        {
+          title: "Kunjungan Bulan Ini",
+          value: reportSummary.total_visits.toLocaleString("id-ID"),
+          change: formatPercent(reportSummary.visits_change_percent),
+          changeType:
+            reportSummary.visits_change_percent >= 0
+              ? ("positive" as const)
+              : ("negative" as const),
+          icon: UserCheck,
+          color: "text-blue-600 dark:text-blue-400",
+          bg: "bg-blue-50 dark:bg-blue-950/50",
+        },
+        {
+          title: "Pendapatan Bulan Ini",
+          value: formatCurrency(reportSummary.total_revenue),
+          change: formatPercent(reportSummary.revenue_change_percent),
+          changeType:
+            reportSummary.revenue_change_percent >= 0
+              ? ("positive" as const)
+              : ("negative" as const),
+          icon: CreditCard,
+          color: "text-emerald-600 dark:text-emerald-400",
+          bg: "bg-emerald-50 dark:bg-emerald-950/50",
+        },
+        {
+          title: "Pasien Baru",
+          value: reportSummary.total_new_patients.toLocaleString("id-ID"),
+          change: formatPercent(reportSummary.new_patients_change_percent),
+          changeType:
+            reportSummary.new_patients_change_percent >= 0
+              ? ("positive" as const)
+              : ("negative" as const),
+          icon: Users,
+          color: "text-violet-600 dark:text-violet-400",
+          bg: "bg-violet-50 dark:bg-violet-950/50",
+        },
+        {
+          title: "Rata-rata per Kunjungan",
+          value: formatCurrency(reportSummary.avg_revenue_per_visit),
+          change: "",
+          changeType: "neutral" as const,
+          icon: BarChart3,
+          color: "text-amber-600 dark:text-amber-400",
+          bg: "bg-amber-50 dark:bg-amber-950/50",
+        },
+      ]
+    : [];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground text-sm">
+            Memuat data dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-8">
@@ -342,11 +604,11 @@ export default function DashboardPage() {
       >
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Selamat Datang, {user?.name?.split(" ")[0]}! 👋
+            Selamat Datang, {user?.name?.split(" ")[0]}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            {user?.role ? ROLE_LABELS[user.role as UserRole] : ""} • Berikut
-            ringkasan aktivitas klinik hari ini
+            {user?.role ? ROLE_LABELS[user.role as UserRole] : ""} &bull;
+            Berikut ringkasan aktivitas klinik hari ini
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -363,66 +625,64 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Running Text / Announcements */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20"
-      >
-        <div className="flex items-center">
-          {/* Label */}
-          <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground shrink-0 z-10">
-            <Megaphone className="h-4 w-4" />
-            <span className="font-semibold text-sm hidden sm:inline">
-              Pengumuman
-            </span>
+      {announcements.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20"
+        >
+          <div className="flex items-center">
+            <div className="flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground shrink-0 z-10">
+              <Megaphone className="h-4 w-4" />
+              <span className="font-semibold text-sm hidden sm:inline">
+                Pengumuman
+              </span>
+            </div>
+            <div className="flex-1 overflow-hidden py-3">
+              <motion.div
+                className="flex gap-12 whitespace-nowrap"
+                animate={{ x: ["0%", "-50%"] }}
+                transition={{
+                  x: {
+                    repeat: Infinity,
+                    repeatType: "loop",
+                    duration: Math.max(20, announcements.length * 8),
+                    ease: "linear",
+                  },
+                }}
+              >
+                {[...announcements, ...announcements].map(
+                  (announcement, index) => {
+                    const style = getAnnouncementStyle(announcement.type);
+                    const IconComponent = style.icon;
+                    return (
+                      <div
+                        key={`${announcement.id}-${index}`}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span className={`p-1 rounded-full ${style.bgColor}`}>
+                          <IconComponent
+                            className={`h-3 w-3 ${style.textColor}`}
+                          />
+                        </span>
+                        <span className="text-foreground">
+                          {announcement.message}
+                        </span>
+                        <span className="text-muted-foreground mx-4">
+                          &bull;
+                        </span>
+                      </div>
+                    );
+                  },
+                )}
+              </motion.div>
+            </div>
           </div>
+        </motion.div>
+      )}
 
-          {/* Running text container */}
-          <div className="flex-1 overflow-hidden py-3">
-            <motion.div
-              className="flex gap-12 whitespace-nowrap"
-              animate={{
-                x: ["0%", "-50%"],
-              }}
-              transition={{
-                x: {
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  duration: 30,
-                  ease: "linear",
-                },
-              }}
-            >
-              {/* Double the announcements for seamless loop */}
-              {[...announcements, ...announcements].map(
-                (announcement, index) => {
-                  const style = getAnnouncementStyle(announcement.type);
-                  const IconComponent = style.icon;
-                  return (
-                    <div
-                      key={`${announcement.id}-${index}`}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className={`p-1 rounded-full ${style.bgColor}`}>
-                        <IconComponent
-                          className={`h-3 w-3 ${style.textColor}`}
-                        />
-                      </span>
-                      <span className="text-foreground">
-                        {announcement.message}
-                      </span>
-                      <span className="text-muted-foreground mx-4">•</span>
-                    </div>
-                  );
-                },
-              )}
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Stats cards */}
+      {/* Today Stats Cards */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -445,29 +705,30 @@ export default function DashboardPage() {
                   {stat.value}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs mt-1">
-                  {stat.changeType === "positive" && (
+                  {stat.changeType === "positive" && stat.change && (
                     <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
                       <TrendingUp className="h-3 w-3 mr-0.5" />
                       {stat.change}
                     </span>
                   )}
-                  {stat.changeType === "negative" && (
+                  {stat.changeType === "negative" && stat.change && (
                     <span className="flex items-center text-red-600 dark:text-red-400 font-medium">
                       <TrendingDown className="h-3 w-3 mr-0.5" />
                       {stat.change}
                     </span>
                   )}
-                  {stat.changeType === "neutral" && (
+                  {stat.changeType === "neutral" && stat.change && (
                     <span className="text-muted-foreground font-medium">
                       {stat.change}
                     </span>
                   )}
-                  <span className="text-muted-foreground">
-                    {stat.description}
-                  </span>
+                  {stat.description && (
+                    <span className="text-muted-foreground">
+                      &bull; {stat.description}
+                    </span>
+                  )}
                 </div>
               </CardContent>
-              {/* Gradient accent */}
               <div
                 className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.gradient}`}
               />
@@ -476,9 +737,57 @@ export default function DashboardPage() {
         ))}
       </motion.div>
 
-      {/* Charts section */}
+      {/* Monthly Summary Cards */}
+      {summaryCards.length > 0 && (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+        >
+          {summaryCards.map((card) => (
+            <motion.div key={card.title} variants={itemVariants}>
+              <Card className="hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        {card.title}
+                      </p>
+                      <p className="text-xl font-bold mt-1">{card.value}</p>
+                      {card.change && (
+                        <div className="flex items-center gap-1 mt-1">
+                          {card.changeType === "positive" ? (
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center">
+                              <TrendingUp className="h-3 w-3 mr-0.5" />
+                              {card.change}
+                            </span>
+                          ) : card.changeType === "negative" ? (
+                            <span className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center">
+                              <TrendingDown className="h-3 w-3 mr-0.5" />
+                              {card.change}
+                            </span>
+                          ) : null}
+                          <span className="text-xs text-muted-foreground">
+                            vs bulan lalu
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className={`p-3 rounded-xl ${card.bg}`}>
+                      <card.icon className={`h-6 w-6 ${card.color}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Charts Row 1: Visit Trend + Department Distribution */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Monthly Visit Chart - Takes 2 columns */}
+        {/* Monthly Visit Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -493,10 +802,10 @@ export default function DashboardPage() {
                     <div className="p-2 rounded-lg bg-primary/10">
                       <BarChart3 className="h-5 w-5 text-primary" />
                     </div>
-                    Statistik Kunjungan Bulanan
+                    Statistik Kunjungan
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Grafik kunjungan dan pasien baru per bulan
+                    Tren kunjungan dan pasien baru tahun ini
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
@@ -516,92 +825,98 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={monthlyVisitData}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="colorKunjungan"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="var(--color-primary)"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="var(--color-primary)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="colorPasienBaru"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor="oklch(0.65 0.2 145)"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="oklch(0.65 0.2 145)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-border"
-                    />
-                    <XAxis
-                      dataKey="month"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12 }}
-                      className="text-muted-foreground fill-muted-foreground"
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12 }}
-                      className="text-muted-foreground fill-muted-foreground"
-                      tickFormatter={(value) => value.toLocaleString("id-ID")}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="kunjungan"
-                      stroke="var(--color-primary)"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorKunjungan)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="pasienBaru"
-                      stroke="oklch(0.65 0.2 145)"
-                      strokeWidth={2}
-                      fillOpacity={1}
-                      fill="url(#colorPasienBaru)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {visitChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={visitChartData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient
+                          id="colorTotal"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="var(--color-primary)"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="var(--color-primary)"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                        <linearGradient
+                          id="colorNew"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="oklch(0.65 0.2 145)"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="oklch(0.65 0.2 145)"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-border"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12 }}
+                        className="text-muted-foreground fill-muted-foreground"
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12 }}
+                        className="text-muted-foreground fill-muted-foreground"
+                        tickFormatter={(v) => v.toLocaleString("id-ID")}
+                      />
+                      <Tooltip content={<VisitTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="total"
+                        stroke="var(--color-primary)"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorTotal)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="new_patients"
+                        stroke="oklch(0.65 0.2 145)"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorNew)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    Belum ada data kunjungan
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Visit by Poli Chart */}
+        {/* Department Distribution */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -615,55 +930,61 @@ export default function DashboardPage() {
                 </div>
                 Kunjungan per Poli
               </CardTitle>
-              <CardDescription>Distribusi kunjungan hari ini</CardDescription>
+              <CardDescription>Distribusi bulan ini</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={visitByPoliData}
-                    layout="vertical"
-                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      horizontal={true}
-                      vertical={false}
-                      className="stroke-border"
-                    />
-                    <XAxis
-                      type="number"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12 }}
-                      className="text-muted-foreground fill-muted-foreground"
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="poli"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12 }}
-                      width={50}
-                      className="text-muted-foreground fill-muted-foreground"
-                    />
-                    <Tooltip content={<BarTooltip />} />
-                    <Bar
-                      dataKey="kunjungan"
-                      radius={[0, 4, 4, 0]}
-                      barSize={24}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                {deptChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={deptChartData}
+                      layout="vertical"
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal
+                        vertical={false}
+                        className="stroke-border"
+                      />
+                      <XAxis
+                        type="number"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12 }}
+                        className="text-muted-foreground fill-muted-foreground"
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 11 }}
+                        width={80}
+                        className="text-muted-foreground fill-muted-foreground"
+                      />
+                      <Tooltip content={<DeptTooltip />} />
+                      <Bar
+                        dataKey="kunjungan"
+                        radius={[0, 4, 4, 0]}
+                        barSize={24}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                    Belum ada data departemen
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Main content grid */}
+      {/* Row 2: Queue + Patient Type Pie + Payment Method Pie */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Queue - Takes 2 columns */}
+        {/* Today's Queue */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -681,132 +1002,208 @@ export default function DashboardPage() {
                     Antrian Hari Ini
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    Daftar pasien yang sedang menunggu
+                    Pasien yang sedang dilayani dan menunggu
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                    {queueData.length} pasien
-                  </span>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  {queueStats && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400 font-medium text-xs">
+                        {queueStats.waiting} menunggu
+                      </span>
+                      <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-400 font-medium text-xs">
+                        {queueStats.in_service} dilayani
+                      </span>
+                      <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 font-medium text-xs">
+                        {queueStats.completed} selesai
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {queueData.map((patient, index) => (
-                  <motion.div
-                    key={patient.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * index }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
-                        {patient.number}
-                      </div>
-                      <div>
-                        <p className="font-medium">{patient.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Poli {patient.poli} • {patient.time}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                        patient.status === "Dipanggil"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400"
-                      }`}
+              {activeQueues.length > 0 ? (
+                <div className="space-y-3">
+                  {activeQueues.map((queue, index) => (
+                    <motion.div
+                      key={queue.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 * index }}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      {patient.status}
-                    </span>
-                  </motion.div>
-                ))}
-              </div>
-              <Button variant="outline" className="w-full mt-4">
-                Lihat Semua Antrian
-                <ArrowUpRight className="h-4 w-4 ml-2" />
-              </Button>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
+                          {queue.queue_code}
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {queue.patient?.name || "Pasien Walk-in"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {queue.department?.name || "-"}{" "}
+                            {queue.doctor?.name
+                              ? `\u2022 ${queue.doctor.name}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium ${QUEUE_STATUS_BADGE[queue.status] || ""}`}
+                      >
+                        {QUEUE_STATUS_LABEL[queue.status] || queue.status}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                  <Clock className="h-10 w-10 mb-2 opacity-30" />
+                  <p className="text-sm">Belum ada antrian aktif hari ini</p>
+                </div>
+              )}
+              <Link href="/queues">
+                <Button variant="outline" className="w-full mt-4">
+                  Lihat Semua Antrian
+                  <ArrowUpRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Right column */}
+        {/* Right Column: Pie Charts */}
         <div className="space-y-6">
-          {/* Recent Activity */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Activity className="h-5 w-5 text-primary" />
+          {/* Patient Type Distribution */}
+          {patientTypePieData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    Tipe Pasien
+                  </CardTitle>
+                  <CardDescription>Distribusi berdasarkan tipe</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[180px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={patientTypePieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={70}
+                          paddingAngle={4}
+                          dataKey="value"
+                          label={(props) =>
+                            `${props.name ?? ""} ${(((props.percent as number) ?? 0) * 100).toFixed(0)}%`
+                          }
+                          labelLine={false}
+                        >
+                          {patientTypePieData.map((_, i) => (
+                            <Cell key={i} fill={PIE_COLORS[i]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) =>
+                            Number(value).toLocaleString("id-ID")
+                          }
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                  Aktivitas Terbaru
-                </CardTitle>
-                <CardDescription>Update terbaru dari sistem</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentActivities.map((activity, index) => (
-                    <motion.div
-                      key={activity.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                      className="flex items-start gap-3"
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${activity.color}`}
-                      >
-                        <activity.icon className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{activity.action}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {activity.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {activity.time}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
-          {/* Top Doctors */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <UserCheck className="h-5 w-5 text-primary" />
+          {/* Payment Method Distribution */}
+          {paymentMethodPieData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                    </div>
+                    Metode Pembayaran
+                  </CardTitle>
+                  <CardDescription>Hari ini</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {paymentMethodPieData.map((method, i) => (
+                      <div
+                        key={method.name}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{
+                              backgroundColor:
+                                PIE_COLORS[i % PIE_COLORS.length],
+                            }}
+                          />
+                          <span>{method.name}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-medium">
+                            {formatFullCurrency(method.value)}
+                          </span>
+                          <span className="text-muted-foreground ml-1">
+                            ({method.count}x)
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  Dokter Terbaik
-                </CardTitle>
-                <CardDescription>
-                  Berdasarkan jumlah pasien bulan ini
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Top Doctors + Pharmacy Alerts + Queue Stats */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Top Doctors */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <UserCheck className="h-5 w-5 text-primary" />
+                </div>
+                Dokter Teratas
+              </CardTitle>
+              <CardDescription>
+                Berdasarkan jumlah pasien bulan ini
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {topDoctors.length > 0 ? (
                 <div className="space-y-3">
                   {topDoctors.map((doctor, index) => (
                     <div
-                      key={doctor.name}
+                      key={doctor.doctor_id}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
@@ -814,31 +1211,400 @@ export default function DashboardPage() {
                       </div>
                       <Avatar className="h-10 w-10">
                         <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {getInitials(doctor.name)}
+                          {getInitials(doctor.doctor_name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {doctor.name}
+                          {doctor.doctor_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {doctor.specialty}
+                          {doctor.department_name}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold">
-                          {doctor.patients}
+                          {doctor.total_patients}
                         </p>
                         <p className="text-xs text-muted-foreground">pasien</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                  <Stethoscope className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">Belum ada data dokter</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Pharmacy Alerts */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Pill className="h-5 w-5 text-primary" />
+                </div>
+                Status Farmasi
+              </CardTitle>
+              <CardDescription>Peringatan stok obat</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {medicineStats ? (
+                <div className="space-y-4">
+                  {/* Medicine stats overview */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-2xl font-bold">
+                        {medicineStats.total}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Total Obat
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50">
+                      <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {medicineStats.active}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Aktif</p>
+                    </div>
+                  </div>
+
+                  {/* Alert items */}
+                  <div className="space-y-2">
+                    {medicineStats.out_of_stock > 0 && (
+                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                            Stok Habis
+                          </p>
+                          <p className="text-xs text-red-600 dark:text-red-500">
+                            {medicineStats.out_of_stock} item obat
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {medicineStats.low_stock > 0 && (
+                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                            Stok Menipis
+                          </p>
+                          <p className="text-xs text-amber-600 dark:text-amber-500">
+                            {medicineStats.low_stock} item obat
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {medicineStats.expiring_soon > 0 && (
+                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900">
+                        <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-orange-700 dark:text-orange-400">
+                            Mendekati Kedaluwarsa
+                          </p>
+                          <p className="text-xs text-orange-600 dark:text-orange-500">
+                            {medicineStats.expiring_soon} item (3 bulan)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {medicineStats.out_of_stock === 0 &&
+                      medicineStats.low_stock === 0 &&
+                      medicineStats.expiring_soon === 0 && (
+                        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
+                          <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                            Semua stok obat dalam kondisi normal
+                          </p>
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Low stock medicine list */}
+                  {lowStockMedicines.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Obat Stok Menipis:
+                      </p>
+                      <div className="space-y-1.5 max-h-[120px] overflow-y-auto">
+                        {lowStockMedicines.slice(0, 5).map((med) => (
+                          <div
+                            key={med.id}
+                            className="flex items-center justify-between text-xs p-1.5 rounded bg-muted/30"
+                          >
+                            <span className="truncate flex-1">{med.name}</span>
+                            <span className="font-medium text-amber-600 dark:text-amber-400 ml-2">
+                              {med.current_stock} {med.unit}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Link href="/pharmacy/medicines">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <Package className="h-4 w-4 mr-2" />
+                      Kelola Farmasi
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                  <Pill className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">Data farmasi tidak tersedia</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Queue Performance */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Activity className="h-5 w-5 text-primary" />
+                </div>
+                Performa Antrian
+              </CardTitle>
+              <CardDescription>Statistik layanan hari ini</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {queueStats ? (
+                <div className="space-y-4">
+                  {/* Wait & service time */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-center">
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {queueStats.avg_wait_time > 0
+                          ? `${Math.round(queueStats.avg_wait_time)}`
+                          : "0"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Rata-rata tunggu (mnt)
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-950/50 text-center">
+                      <p className="text-2xl font-bold text-violet-600 dark:text-violet-400">
+                        {queueStats.avg_service_time > 0
+                          ? `${Math.round(queueStats.avg_service_time)}`
+                          : "0"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Rata-rata layanan (mnt)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Queue status breakdown */}
+                  <div className="space-y-2.5">
+                    {[
+                      {
+                        label: "Menunggu",
+                        value: queueStats.waiting,
+                        total: queueStats.total,
+                        color: "bg-amber-500",
+                      },
+                      {
+                        label: "Dipanggil",
+                        value: queueStats.called,
+                        total: queueStats.total,
+                        color: "bg-blue-500",
+                      },
+                      {
+                        label: "Dilayani",
+                        value: queueStats.in_service,
+                        total: queueStats.total,
+                        color: "bg-purple-500",
+                      },
+                      {
+                        label: "Selesai",
+                        value: queueStats.completed,
+                        total: queueStats.total,
+                        color: "bg-emerald-500",
+                      },
+                      {
+                        label: "Dilewati",
+                        value: queueStats.skipped,
+                        total: queueStats.total,
+                        color: "bg-orange-500",
+                      },
+                    ]
+                      .filter((s) => s.value > 0)
+                      .map((s) => (
+                        <div key={s.label}>
+                          <div className="flex items-center justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">
+                              {s.label}
+                            </span>
+                            <span className="font-medium">{s.value}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${s.color} transition-all`}
+                              style={{
+                                width: `${s.total > 0 ? (s.value / s.total) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  <Link href="/queues">
+                    <Button variant="outline" size="sm" className="w-full">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Kelola Antrian
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                  <Activity className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">Data antrian tidak tersedia</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
+
+      {/* Row 4: Department Revenue Table */}
+      {departmentData.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                    </div>
+                    Performa Departemen
+                  </CardTitle>
+                  <CardDescription>
+                    Ringkasan kunjungan dan pendapatan per departemen bulan ini
+                  </CardDescription>
+                </div>
+                <Link href="/reports">
+                  <Button variant="outline" size="sm">
+                    Lihat Laporan
+                    <ArrowUpRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                        Departemen
+                      </th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+                        Kunjungan
+                      </th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+                        Pasien
+                      </th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+                        Pendapatan
+                      </th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+                        Rata-rata
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departmentData.map((dept) => (
+                      <tr
+                        key={dept.department_id}
+                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full shrink-0"
+                              style={{
+                                backgroundColor:
+                                  dept.department_color ||
+                                  "var(--color-primary)",
+                              }}
+                            />
+                            <span className="font-medium">
+                              {dept.department_name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-right py-3 px-2">
+                          {dept.total_visits.toLocaleString("id-ID")}
+                        </td>
+                        <td className="text-right py-3 px-2">
+                          {dept.total_patients.toLocaleString("id-ID")}
+                        </td>
+                        <td className="text-right py-3 px-2 font-medium">
+                          {formatFullCurrency(dept.total_revenue)}
+                        </td>
+                        <td className="text-right py-3 px-2 text-muted-foreground">
+                          {formatFullCurrency(dept.avg_revenue_per_visit)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 font-semibold">
+                      <td className="py-3 px-2">Total</td>
+                      <td className="text-right py-3 px-2">
+                        {departmentData
+                          .reduce((s, d) => s + d.total_visits, 0)
+                          .toLocaleString("id-ID")}
+                      </td>
+                      <td className="text-right py-3 px-2">
+                        {departmentData
+                          .reduce((s, d) => s + d.total_patients, 0)
+                          .toLocaleString("id-ID")}
+                      </td>
+                      <td className="text-right py-3 px-2">
+                        {formatFullCurrency(
+                          departmentData.reduce(
+                            (s, d) => s + d.total_revenue,
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="text-right py-3 px-2 text-muted-foreground">
+                        -
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
