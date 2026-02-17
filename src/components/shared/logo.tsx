@@ -82,8 +82,8 @@ export function Logo({
   const { settings, isLoading } = useClinicSettings();
 
   // Get clinic name and logo from settings
-  const clinicName = settings?.name || "KlinikCare";
-  const clinicTagline = settings?.tagline || "Healthcare Management";
+  const clinicName = settings?.name || "Clinexa";
+  const clinicTagline = settings?.tagline || "Bicara. Catat. Sembuhkan.";
   const clinicLogo = settings?.logo_url;
 
   // Custom logo from clinic settings
@@ -109,83 +109,59 @@ export function Logo({
     );
   };
 
+  // Default Clinexa logo (Stethoscope C — Variant F)
   const DefaultLogoIcon = () => (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn(sizeClasses[size], "shrink-0")}
     >
-      {/* Background circle with gradient */}
       <defs>
-        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B82F6" />
+        <linearGradient id="clinexa-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1E40AF" />
           <stop offset="50%" stopColor="#2563EB" />
-          <stop offset="100%" stopColor="#1D4ED8" />
+          <stop offset="100%" stopColor="#0891B2" />
         </linearGradient>
-        <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#E0E7FF" />
-        </linearGradient>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.3" />
-        </filter>
       </defs>
-
-      {/* Main circle background */}
-      <circle
-        cx="50"
-        cy="50"
-        r="46"
-        fill="url(#logoGradient)"
-        filter="url(#shadow)"
+      <rect
+        x="4"
+        y="4"
+        width="112"
+        height="112"
+        rx="24"
+        fill="url(#clinexa-bg)"
       />
-
-      {/* Inner decorative ring */}
-      <circle
-        cx="50"
-        cy="50"
-        r="40"
-        fill="none"
-        stroke="rgba(255,255,255,0.2)"
-        strokeWidth="1"
-      />
-
-      {/* Medical cross */}
-      <g filter="url(#shadow)">
-        {/* Vertical bar */}
-        <rect
-          x="42"
-          y="22"
-          width="16"
-          height="56"
-          rx="4"
-          fill="url(#crossGradient)"
-        />
-        {/* Horizontal bar */}
-        <rect
-          x="22"
-          y="42"
-          width="56"
-          height="16"
-          rx="4"
-          fill="url(#crossGradient)"
-        />
-      </g>
-
-      {/* Heart accent in center */}
       <path
-        d="M50 62 C50 62, 38 52, 38 45 C38 40, 42 38, 46 38 C48 38, 50 40, 50 40 C50 40, 52 38, 54 38 C58 38, 62 40, 62 45 C62 52, 50 62, 50 62Z"
-        fill="#EF4444"
-        opacity="0.9"
-      />
-
-      {/* Pulse line accent */}
-      <path
-        d="M25 70 L35 70 L40 60 L45 78 L50 65 L55 75 L60 68 L65 70 L75 70"
+        d="M80 30C70 22 58 20 46 24C30 30 22 46 24 62C26 78 40 92 58 92C68 90 76 84 82 76"
         fill="none"
-        stroke="rgba(255,255,255,0.6)"
-        strokeWidth="2"
+        stroke="white"
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="80"
+        cy="30"
+        r="6"
+        fill="none"
+        stroke="white"
+        strokeWidth="3"
+      />
+      <circle cx="80" cy="30" r="2" fill="#67E8F9" />
+      <circle
+        cx="82"
+        cy="76"
+        r="10"
+        fill="none"
+        stroke="white"
+        strokeWidth="3"
+      />
+      <circle cx="82" cy="76" r="5" fill="#67E8F9" />
+      <path
+        d="M36 58L44 58L48 48L54 68L58 52L62 58L70 58"
+        fill="none"
+        stroke="#67E8F9"
+        strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -204,6 +180,9 @@ export function Logo({
         ? "bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent"
         : "text-foreground";
 
+  const subtextColorClass =
+    variant === "white" ? "text-white/70" : "text-muted-foreground";
+
   const Wrapper = animated ? motion.div : "div";
   const wrapperProps = animated
     ? {
@@ -214,10 +193,25 @@ export function Logo({
     : {};
 
   // Display name based on whether we're using clinic settings
-  const displayName = useClinicLogo ? clinicName : "KlinikCare";
+  const displayName = useClinicLogo ? clinicName : "Clinexa";
   const displayTagline = useClinicLogo
     ? clinicTagline
-    : "Healthcare Management";
+    : "Bicara. Catat. Sembuhkan.";
+
+  // Render brand name with clin/exa split styling
+  const renderBrandName = () => {
+    if (useClinicLogo && clinicName !== "Clinexa") {
+      // Custom clinic name — render as-is
+      return displayName;
+    }
+    // Default Clinexa brand — split styling
+    return (
+      <>
+        <span className="font-light">clin</span>
+        <span className="font-bold">exa</span>
+      </>
+    );
+  };
 
   return (
     <Wrapper
@@ -248,12 +242,12 @@ export function Logo({
           ) : (
             <span
               className={cn(
-                "font-bold leading-tight tracking-tight truncate",
+                "leading-tight tracking-tight truncate",
                 textSizeClasses[size],
                 textColorClass,
               )}
             >
-              {displayName}
+              {renderBrandName()}
             </span>
           )}
           {displayTagline && (
@@ -261,7 +255,7 @@ export function Logo({
               className={cn(
                 "leading-tight truncate",
                 size === "sm" ? "text-[10px]" : "text-xs",
-                variant === "white" ? "text-white/70" : "text-muted-foreground",
+                subtextColorClass,
               )}
             >
               {displayTagline}
@@ -277,23 +271,58 @@ export function Logo({
 export function LogoMini({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 100 100"
+      viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("w-8 h-8", className)}
     >
       <defs>
-        <linearGradient id="miniGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#1D4ED8" />
+        <linearGradient id="miniClinexa" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1E40AF" />
+          <stop offset="50%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#0891B2" />
         </linearGradient>
       </defs>
-      <circle cx="50" cy="50" r="46" fill="url(#miniGradient)" />
-      <rect x="42" y="22" width="16" height="56" rx="4" fill="white" />
-      <rect x="22" y="42" width="56" height="16" rx="4" fill="white" />
+      <rect
+        x="4"
+        y="4"
+        width="112"
+        height="112"
+        rx="24"
+        fill="url(#miniClinexa)"
+      />
       <path
-        d="M50 60 C50 60, 40 52, 40 46 C40 42, 43 40, 46 40 C48 40, 50 42, 50 42 C50 42, 52 40, 54 40 C57 40, 60 42, 60 46 C60 52, 50 60, 50 60Z"
-        fill="#EF4444"
+        d="M80 30C70 22 58 20 46 24C30 30 22 46 24 62C26 78 40 92 58 92C68 90 76 84 82 76"
+        fill="none"
+        stroke="white"
+        strokeWidth="7"
+        strokeLinecap="round"
+      />
+      <circle
+        cx="80"
+        cy="30"
+        r="6"
+        fill="none"
+        stroke="white"
+        strokeWidth="3"
+      />
+      <circle cx="80" cy="30" r="2" fill="#67E8F9" />
+      <circle
+        cx="82"
+        cy="76"
+        r="10"
+        fill="none"
+        stroke="white"
+        strokeWidth="3"
+      />
+      <circle cx="82" cy="76" r="5" fill="#67E8F9" />
+      <path
+        d="M36 58L44 58L48 48L54 68L58 52L62 58L70 58"
+        fill="none"
+        stroke="#67E8F9"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

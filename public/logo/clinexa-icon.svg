@@ -1,0 +1,29 @@
+<svg width="512" height="512" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="markF-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E40AF" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#0891B2" />
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="112" height="112" rx="24" fill="url(#markF-bg)" />
+  <path
+    d="M80 30C70 22 58 20 46 24C30 30 22 46 24 62C26 78 40 92 58 92C68 90 76 84 82 76"
+    fill="none"
+    stroke="white"
+    stroke-width="7"
+    stroke-linecap="round"
+  />
+  <circle cx="80" cy="30" r="6" fill="none" stroke="white" stroke-width="3" />
+  <circle cx="80" cy="30" r="2" fill="#67E8F9" />
+  <circle cx="82" cy="76" r="10" fill="none" stroke="white" stroke-width="3" />
+  <circle cx="82" cy="76" r="5" fill="#67E8F9" />
+  <path
+    d="M36 58L44 58L48 48L54 68L58 52L62 58L70 58"
+    fill="none"
+    stroke="#67E8F9"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

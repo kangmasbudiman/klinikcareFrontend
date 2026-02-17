@@ -8,6 +8,8 @@ const publicRoutes = [
   "/reset-password",
   "/kiosk",
   "/queue/display",
+  "/landing",
+  "/logo-preview",
 ];
 
 // Routes that require specific roles

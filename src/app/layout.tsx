@@ -9,8 +9,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Klinik App - Sistem Manajemen Klinik",
-  description: "Aplikasi manajemen klinik dengan fitur lengkap untuk mengelola pasien, dokter, dan operasional klinik",
+  title: "Clinexa - Bicara. Catat. Sembuhkan.",
+  description:
+    "Sistem manajemen klinik berbasis AI dengan fitur lengkap untuk mengelola pasien, rekam medis, farmasi, dan operasional klinik",
+  icons: {
+    icon: "/logo/clinexa-icon-32x32.png",
+    apple: "/logo/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

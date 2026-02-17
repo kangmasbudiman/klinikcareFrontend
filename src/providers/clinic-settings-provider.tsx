@@ -23,7 +23,14 @@ const ClinicSettingsContext = createContext<
 >(undefined);
 
 // Public routes that should use public API
-const publicRoutes = ["/kiosk", "/queue/display", "/login", "/forgot-password"];
+const publicRoutes = [
+  "/kiosk",
+  "/queue/display",
+  "/login",
+  "/forgot-password",
+  "/landing",
+  "/logo-preview",
+];
 
 export function ClinicSettingsProvider({
   children,
