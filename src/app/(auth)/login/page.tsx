@@ -254,61 +254,7 @@ export default function LoginPage() {
               </motion.div>
             </form>
 
-            {/* Demo Accounts Section */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="mt-8"
-            >
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-4 bg-white/80 text-sm text-gray-500 font-medium">
-                    Coba Demo Akun
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                {demoAccounts.map((account, index) => (
-                  <motion.button
-                    key={account.email}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.7 + index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleDemoLogin(account)}
-                    disabled={isLoading}
-                    className={`relative p-3 rounded-xl border-2 transition-all duration-300 ${
-                      selectedDemo === account.email
-                        ? "border-primary-500 bg-primary-50"
-                        : "border-gray-100 hover:border-gray-200 bg-white/50 hover:bg-white"
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r ${account.color}`}
-                    />
-                    <div className="pt-1">
-                      <p className="font-semibold text-gray-900 text-sm">
-                        {account.role}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {account.email}
-                      </p>
-                    </div>
-                    {selectedDemo === account.email && isLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-xl">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
-                      </div>
-                    )}
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
+        
           </div>
         </div>
       </div>
